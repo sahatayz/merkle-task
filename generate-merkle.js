@@ -1,8 +1,7 @@
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import fs from "fs";
-import { ethers } from "ethers";
 
-// 1. Load whitelist addresses
+// Step 1: Address list
 const addresses = [
   "0x1111111111111111111111111111111111111111",
   "0x2222222222222222222222222222222222222222",
@@ -10,23 +9,16 @@ const addresses = [
   "0x4444444444444444444444444444444444444444"
 ];
 
-// 2. Convert to checksum addresses
-const values = addresses.map(addr => [
-  ethers.utils.getAddress(addr) // Proper EIP-55 checksum
-]);
+// Step 2: Create Merkle tree
+const tree = StandardMerkleTree.of(addresses.map(a => [a]), ["address"]);
 
-// 3. Build Merkle tree
-const tree = StandardMerkleTree.of(values, ["address"]);
-
-// 4. Save outputs
-console.log("Merkle Root:", tree.root);
+// Step 3: Save outputs
+console.log("Merkle Root:", tree.root); // ← Use this in contract
 fs.writeFileSync("tree.json", JSON.stringify(tree.dump()));
 
-// 5. Generate all proofs
+// Step 4: Generate proofs
 const proofs = {};
 for (const [i, [address]] of tree.entries()) {
   proofs[address] = tree.getProof(i);
 }
 fs.writeFileSync("proofs.json", JSON.stringify(proofs, null, 2));
-
-console.log("Merkle tree and proofs generated successfully!");

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts@4.9.3/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract Whitelist {
     bytes32 public immutable merkleRoot;
     
-    constructor(bytes32 root) {
-        merkleRoot = root;
+    constructor(bytes32 _root) {
+        merkleRoot = _root;
     }
 
     function checkWhitelist(bytes32[] calldata proof, address user) public view returns (bool) {
