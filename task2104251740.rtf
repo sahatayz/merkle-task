@@ -1,0 +1,128 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fnil\fcharset0 .AppleSystemUIFontMonospaced-Medium;\f2\fnil\fcharset0 HelveticaNeue-Bold;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs26 \cf2 ## \'d6dev: Merkle-Tabanl\uc0\u305  Whitelist Kontrat\u305 \
+\
+### Ama\'e7  \
+Off\uc0\u8209 chain (\'f6rne\u287 in JavaScript ile) olu\u351 turulmu\u351  bir whitelist\'92in on\u8209 chain olarak do\u287 rulanmas\u305 n\u305  sa\u287 lamak. Bunun i\'e7in OpenZeppelin\'92in 
+\f1 MerkleProof
+\f0  k\'fct\'fcphanesini ve Solidity\'92nin 
+\f1 keccak256
+\f0  fonksiyonunu kullanacaks\uc0\u305 n.\
+\
+---\
+\
+### Gereksinimler ve Beklenen Fonksiyonlar\
+\
+1. 
+\f2\b Merkle Root Y\'f6netimi
+\f0\b0   \
+   - 
+\f1 bytes32 public merkleRoot;
+\f0   \
+   - 
+\f1 function setMerkleRoot(bytes32 _root) external onlyOwner;
+\f0   \
+     - Sadece kontrat sahibi (admin) \'e7a\uc0\u287 \u305 rabilir.  \
+     - Yeni Merkle root\'92u ayarlar.  \
+\
+2. 
+\f2\b Whitelist Do\uc0\u287 rulama ve Claim
+\f0\b0   \
+   - 
+\f1 mapping(address => bool) public hasClaimed;
+\f0   \
+   - 
+\f1 function isWhitelisted(address user, bytes32[] calldata proof) public view returns (bool);
+\f0   \
+     - Verilen 
+\f1 proof
+\f0  ile 
+\f1 user
+\f0  adresinin Merkle a\uc0\u287 ac\u305 nda olup olmad\u305 \u287 \u305 n\u305  d\'f6ner.  \
+   - 
+\f1 function claimReward(bytes32[] calldata proof) external;
+\f0   \
+     - Sadece whitelist\'92te olan ve daha \'f6nce \'f6d\'fcl almam\uc0\u305 \u351  adresler \'e7a\u287 \u305 rabilir.  \
+     - Do\uc0\u287 rulamay\u305  ba\u351 aramazsa 
+\f1 revert
+\f0  eder.  \
+     - Ba\uc0\u351 ar\u305 l\u305 ysa 
+\f1 hasClaimed[msg.sender] = true;
+\f0  ve 
+\f1 RewardClaimed(msg.sender)
+\f0  eventi emit edilir.\
+\
+3. 
+\f2\b Event\'92ler
+\f0\b0   \
+   - 
+\f1 event MerkleRootUpdated(bytes32 oldRoot, bytes32 newRoot);
+\f0   \
+   - 
+\f1 event RewardClaimed(address indexed claimer);
+\f0 \
+\
+4. 
+\f2\b Ek Fonksiyonlar (Opsiyonel)
+\f0\b0   \
+   - 
+\f1 function getClaimCount() public view returns (uint256);
+\f0   \
+     - Toplam ka\'e7 ki\uc0\u351 inin \'f6d\'fcl ald\u305 \u287 \u305 n\u305  d\'f6ner.  \
+   - 
+\f1 function withdrawUnclaimed(address to) external onlyOwner;
+\f0   \
+     - Kontratta kalan (kullan\uc0\u305 lmam\u305 \u351 ) \'f6d\'fcl bakiyesini admin\'92in belirleyece\u287 i bir adrese g\'f6nderir.  \
+\
+---\
+\
+### Ad\uc0\u305 m Ad\u305 m Yap\u305 lacaklar\
+\
+1. 
+\f2\b Off\uc0\u8209 chain Haz\u305 rl\u305 k (JS/TS taraf\u305 )
+\f0\b0   \
+   - Bir adres listesi olu\uc0\u351 tur (\'f6r. `["0xAbc\'85", "0xDef\'85", \'85]`).  \
+   - OpenZeppelin\'92in `merkletreejs` k\'fct\'fcphanesiyle:  \
+     1. Her adresi 
+\f1 keccak256
+\f0  ile hash\'92le.  \
+     2. Merkle Tree olu\uc0\u351 tur ve k\'f6k (root) de\u287 erini al.  \
+     3. Her adres i\'e7in proof\'92lar\uc0\u305  \'e7\u305 kar ve JSON dosyas\u305  halinde sakla (\'f6r. `proofs.json`).  \
+\
+2. 
+\f2\b On\uc0\u8209 chain Kontrat (Solidity)
+\f0\b0   \
+   - Yukar\uc0\u305 daki gereksinimlere uygun bir kontrat yaz.  \
+   - OpenZeppelin\'92den 
+\f1 Ownable.sol
+\f0  ve 
+\f1 MerkleProof.sol
+\f0  importer.  \
+   - 
+\f1 claimReward
+\f0  i\'e7inde 
+\f1 MerkleProof.verify(proof, merkleRoot, leaf)
+\f0  kullan.  \
+\
+3. 
+\f2\b Test & Deploy
+\f0\b0   \
+   - Local test ortam\uc0\u305 nda (Hardhat/Foundry) root\'92u ayarla (`setMerkleRoot`),  \
+   - Whitelist\'92teki bir adresle 
+\f1 claimReward
+\f0  \'e7a\uc0\u287 \u305 r ve ba\u351 ar\u305 l\u305  oldu\u287 unu,  \
+   - Whitelist d\uc0\u305 \u351 \u305  bir adresle \'e7a\u287 \u305 r\u305 nca revert etti\u287 ini test et.  \
+\
+4. 
+\f2\b Dok\'fcmantasyon
+\f0\b0   \
+   - JS taraf\uc0\u305  i\'e7in: Merkle root\'92u nas\u305 l olu\u351 turdu\u287 unu, hangi komutla proof \'e7\u305 kard\u305 \u287 \u305 n\u305  k\u305 sa bir README\'92de a\'e7\u305 kla.  \
+   - Solidity taraf\uc0\u305  i\'e7in: Her fonksiyonun ne yapt\u305 \u287 \u305 n\u305  ve hata mesajlar\u305 n\u305  (revert reason) a\'e7\u305 klayan Natspec yorumlar\u305  ekle.\
+\
+https://github.com/merkletreejs/merkletreejs}
